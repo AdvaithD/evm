@@ -76,6 +76,7 @@ store after: { 0x0 => 0x1} (after pushing 0x1 in 0x0, a simple mapping)
 
 Simulating bytecode - 6001600081905550
 
+```
 60 01: push 1 onto stack
 0x1
   stack - [0x1]
@@ -95,5 +96,85 @@ sstore
 50: pop stack
   stack: []
   store { 0x0 => 0x1 }
+```
 
 Resulting state: empty stackm, one item pushed to storage
+
+
+## Two State Variables
+```
+...
+...
+pop
+0x1
+0x0
+0x00
+dup2
+swap1
+sstore
+pop
+0x02
+0x01
+dup2
+swap1
+sstore
+pop
+```
+which translates to 
+sstore(0x0, 0x1) // a = 1;
+sstore(0x1, 0x2) // b = 2;
+  a stored in 0x0 and b stored in 0x1
+
+### Storage
+packing - each slot can store a max of 32 bytes. We can also pack smaller data blobs into one slot
+(e.g: two uint128 numbers).
+
+### two variables one storage slot (saves gas!)
+```
+0x1
+0x00
+dup1
+0x0100
+exp
+dup2
+0xffff...
+mul
+not
+and
+swap1
+dup4
+0xffff...
+and
+mul
+or
+swap1
+sstore
+pop
+
+// b = 2
+0x2
+0x00
+0x10
+0x0100
+exp
+dup2
+sload
+dup2
+0xffff...
+mul
+not
+and
+swap
+dup4
+0xffff...
+and
+mul
+or
+swap1
+sstore
+pop
+```
+[  b (16 bytes/128 bits)  ][  a (16 bytes/128 bits)  ]
+^ at the position - 0x0
+
+
